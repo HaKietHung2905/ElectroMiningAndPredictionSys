@@ -35,10 +35,17 @@ def query_form():
         
         # Convert the DataFrame to HTML (for demonstration purposes)
         #data_html = df.to_html()
-        codeType = 'A_A'
+        #codeType = 'A_A'
 
-        Result  = Predict.getModel(codeType,df)
+        codeType = request.form['selectType']
+        print(codeType)
+        predictType = request.form['predictType']
+        print(predictType)
         
+        if predictType == 'hour':
+            Result  = Predict.predict1Hour(codeType,df)
+        else:
+            Result = Predict.predict4Day(codeType,df)            
         return Result
     else:
         return 'Invalid file type'

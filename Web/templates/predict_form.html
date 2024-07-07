@@ -14,8 +14,8 @@
         <h2>Electronic Predict System</h2>
         
         <form action="/query_form" method="POST" enctype="multipart/form-data">
-            <label for="select_input">Select DK Code Type:</label>
-            <select id="select_input" name="select_input">
+            <label for="selectType">Select DK Code Type:</label>
+            <select id="selectType" name="selectType">
                 <option value="A_A">A_A</option>
                 <option value="C_CA">C_CA</option>
                 <option value="C_CC">C_CC</option>
@@ -49,7 +49,14 @@
                 <option value="R_R">R_R</option>
                 <option value="S_S">S_S</option>
             </select><br><br>
-            <label for="csv_input">CSV Input:</label>
+
+            <label for="predictType">Select Type Predict:</label>
+            <select id="predictType" name="predictType">
+                <option value="hour">1 Hour</option>
+                <option value="day">1 Day</option>
+            </select><br><br>
+
+            <label for="csvInput">CSV Input:</label>
             <input type="file" id="csv_input" name="csv_input" accept=".csv"><br><br>
 
             <button type="submit">Predict</button>
