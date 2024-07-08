@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Electronic Predict System</title>
+    <style>
+       
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Electronic Predict System</h2>
+        
+        <form action="/query_form" method="POST" enctype="multipart/form-data">
+            <label for="selectType">Select DK Code Type:</label>
+            <select id="selectType" name="selectType">
+                <option value="A_A">A_A</option>
+                <option value="C_CA">C_CA</option>
+                <option value="C_CC">C_CC</option>
+                <option value="C_CE_CF_CD">C_CE_CF_CD</option>
+                <option value="C_CG">C_CG</option>
+                <option value="C_CH">C_CH</option>
+                <option value="C_CI">C_CI</option>
+                <option value="C_CJ">C_CJ</option>
+                <option value="C_CK">C_CK</option>
+                <option value="C_CL">C_CL</option>
+                <option value="C_CM_CB">C_CM_CB</option>
+                <option value="D_D">D_D</option>
+                <option value="E_E">E_E</option>
+                <option value="F_F">F_F</option>
+                <option value="G_G">G_G</option>
+                <option value="H_H">H_H</option>
+                <option value="I_I">I_I</option>
+                <option value="J_JA">J_JA</option>
+                <option value="J_JB_JC">J_JB_JC</option>
+                <option value="K_K">K_K</option>
+                <option value="L_L">L_L</option>
+                <option value="M_MA">M_MA</option>
+                <option value="M_MB">M_MB</option>
+                <option value="M_MC">M_MC</option>
+                <option value="N_N">N_N</option>
+                <option value="O_O">O_O</option>
+                <option value="PR_PR">PR_PR</option>
+                <option value="P_P">P_P</option>
+                <option value="Q_QA">Q_QA</option>
+                <option value="Q_QB">Q_QB</option>
+                <option value="R_R">R_R</option>
+                <option value="S_S">S_S</option>
+            </select><br><br>
+
+            <label for="predictType">Select Type Predict:</label>
+            <select id="predictType" name="predictType">
+                <option value="hour">1 Hour</option>
+                <option value="day">1 Day</option>
+            </select><br><br>
+
+            <label for="csvInput">CSV Input:</label>
+            <input type="file" id="csv_input" name="csv_input" accept=".csv"><br><br>
+
+            <button type="submit">Predict</button>
+        </form>
+    </div>
+</body>
+</html>

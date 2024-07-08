@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Face Recognition System</title>
+</head>
+<body>
+    <div class="upload-container">
+        <h2>Face Recognition</h2>
+        
+        <form action="/upload_form" method="POST" enctype="multipart/form-data">
+            <label for="image_input">Image Input:</label>
+            <input type="file" id="image_input" name="image_input" accept="image/*"><br><br>
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+</body>
+</html>
