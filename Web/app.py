@@ -46,7 +46,11 @@ def query_form():
             Result  = Predict.predict1Hour(codeType,df)
         else:
             Result = Predict.predict4Day(codeType,df)            
-        return Result
+        
+        # Plot the data
+        print(Result)
+        return render_template('result.html', result=Result)
+        #return Result
     else:
         return 'Invalid file type'
 

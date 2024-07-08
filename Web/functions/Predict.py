@@ -37,7 +37,7 @@ def predict1Hour(codeType, df):
     
     # Normalize the data
     scaler = MinMaxScaler()
-    df['Consumption_MWh'] = df['Consumption_MWh'].apply(clean_consumption)
+    #df['Consumption_MWh'] = df['Consumption_MWh'].apply(clean_consumption)
     scaled_df = scaler.fit_transform(df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']])
 
     # Reshape the data
@@ -87,10 +87,10 @@ def season_mapping(df):
     df['season'] = df['season'].map(seasons_mapping)
     return  df
 
-def clean_consumption(value):
-    # Remove thousand separators and replace commas with periods
-    cleaned_value = value.replace('.', '').replace(',', '.')
-    return float(cleaned_value)
+# def clean_consumption(value):
+#     # Remove thousand separators and replace commas with periods
+#     cleaned_value = value.replace('.', '').replace(',', '.')
+#     return float(cleaned_value)
 
 
 def predict4Day(codeType, df):
@@ -108,8 +108,9 @@ def predict4Day(codeType, df):
     modelName = codeType + '_LSTMmodel.h5'
     model = tf.keras.models.load_model('Weight/' + modelName)
 
-    df_a_pre_day = df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']][-SEQ_LENGTH:].values.tolist()
+    #df_a_pre_day = df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']][-SEQ_LENGTH:].values.tolist()
 
+    df_a_pre_day = []
     # Mapping data
     df = season_mapping(df)
 
@@ -130,7 +131,7 @@ def predict4Day(codeType, df):
         predict_result = model.predict(predict)
 
         # Get the prediction and add one hour to the current timestamp
-        predict_value = predict_result[0][0]
+        #predict_value = predict_result[0][0]
         last_row = df.iloc[-1]
         season, year, month, day_of_month, hour = add_one_hour(
             int(last_row['season']), int(last_row['year']), int(last_row['month']),
@@ -138,13 +139,27 @@ def predict4Day(codeType, df):
         )
         print(season, year, month, day_of_month, hour)
         # Inverse transform the prediction to get the original scale
-        result = scaler.inverse_transform([[season, year, month, day_of_month, hour, predict_value]])
-        print(result[0][5])
-        # Convert season integer back to season string
-        #season_name = {0: 'Spring', 1: 'Summer', 2: 'Autumn', 3: 'Winter'}.get(season, 'Unknown')
 
+        # Extract the last sequence of data for prediction
+        input_sequence = scaled_df[-SEQ_LENGTH:]
+
+        # Initialize with input sequence
+        full_sequence = np.copy(input_sequence)
+
+        # The last column is assumed to be 'Consumption_MWh', replace it with the prediction result
+        full_sequence[:, -1] = predict_result
+
+        # Inverse transform the entire sequence
+        inverse_transformed_sequence = scaler.inverse_transform(full_sequence)
+
+        # Extract the 'Consumption_MWh' part
+        predicted_consumption = inverse_transformed_sequence[:, -1][0]
+
+        #result = scaler.inverse_transform([[season, year, month, day_of_month, hour, predict_value]])
+        #print(result[0][5])
+        
         # Append the prediction to the DataFrame
-        df_pre = pd.DataFrame([[season, year, month, day_of_month, hour, result[0][5]]],
+        df_pre = pd.DataFrame([[season, year, month, day_of_month, hour, predicted_consumption]],
                               columns=['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh'])
         
         df = pd.concat([df, df_pre], ignore_index=True)
@@ -152,21 +167,50 @@ def predict4Day(codeType, df):
 
         if count < 3:
             print(df)
-     
+
         # Convert the result to JSON
-        result_list.append(json.dumps(result.tolist()))
-        # Convert the result to JSON
-        result_list.append(json.dumps([season, year, month, day_of_month, hour, result[0][5]]))
-        df_a_pre_day.append([season, year, month, day_of_month, hour, result[0][5]])
+        result_list.append(json.dumps([season, year, month, day_of_month, hour, predicted_consumption]))
+
+        # Convert season integer back to season string
+        season_name = {0: 'Spring', 1: 'Summer', 2: 'Autumn', 3: 'Winter'}.get(season, 'Unknown')
+        df_a_pre_day.append(['predict', season_name, year, month, day_of_month, hour, predicted_consumption])
 
         count += 1
-    print('zzzz')    
-    #df_a_pre_day = np.array([[i[4], i[5]] for i in df_a_pre_day])
+
+    df_acct = getAcctualData(df_a_pre_day, codeType)
+    
+    df_a_pre_day = df_a_pre_day + df_acct
+
     # Convert the NumPy array to a DataFrame
     df_a_pre_day_df = pd.DataFrame(df_a_pre_day)
 
     # Save the DataFrame to a CSV file
     df_a_pre_day_df.to_csv('data.csv', index=False)
-    print(df_a_pre_day)
     
-    return result_list
+    return df_a_pre_day
+
+def getAcctualData(df, codeType):
+
+    data = pd.read_csv('../Data/dataset_dk3619_preprocessed_v1.csv')
+    df_acct = []
+    for i in range(0, 24):
+        year = df[i][2]
+        month = df[i][3]
+        day = df[i][4]
+        hour = df[i][5]
+
+        # Boolean indexing
+        consumption_data = data[
+            (data['year'] == year) & 
+            (data['month'] == month) & 
+            (data['day_of_month'] == day) & 
+            (data['hour'] == hour) &
+            (data['DK3619Code'] == codeType)
+        ]['Consumption_MWh'].values
+
+        # If multiple values are returned, take the first one (you might want to handle this differently)
+        consumption_data = consumption_data[0] if len(consumption_data) > 0 else None
+
+        df_acct.append(['acct', df[i][1], year, month, day, hour, consumption_data])
+
+    return df_acct
