@@ -15,7 +15,7 @@ SEQ_LENGTH = 24  # for 24 hours sequence
 
 def predict1Hour(codeType, df):
     model = Sequential([
-        LSTM(50, return_sequences=True, input_shape=(SEQ_LENGTH, 10)),
+        LSTM(50, return_sequences=True, input_shape=(SEQ_LENGTH, 6)),
         Dropout(0.2),
         LSTM(50),
         Dropout(0.2),
@@ -38,8 +38,7 @@ def predict1Hour(codeType, df):
     # Normalize the data
     scaler = MinMaxScaler()
     #df['Consumption_MWh'] = df['Consumption_MWh'].apply(clean_consumption)
-    #scaled_df = scaler.fit_transform(df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']])
-    scaled_df = scaler.fit_transform(df[['hour', 'day_of_week', 'month', 'year', 'day_of_year', 'day_of_month', 'season', 'holiday', 'lag_24', 'Consumption_MWh']])
+    scaled_df = scaler.fit_transform(df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']])
 
     # Reshape the data
     predict = np.array([scaled_df])
@@ -98,7 +97,7 @@ def predict4Day(codeType, df):
     SEQ_LENGTH = 24  # Example value; replace with the actual sequence length
 
     model = Sequential([
-        LSTM(50, return_sequences=True, input_shape=(SEQ_LENGTH, 10)),
+        LSTM(50, return_sequences=True, input_shape=(SEQ_LENGTH, 6)),
         Dropout(0.2),
         LSTM(50),
         Dropout(0.2),
@@ -122,9 +121,7 @@ def predict4Day(codeType, df):
     while count < 24:
         # Normalize the data
         scaler = MinMaxScaler()
-        #scaled_df = scaler.fit_transform(df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']])
-
-        scaled_df = scaler.fit_transform(df[['hour', 'day_of_week', 'month', 'year', 'day_of_year', 'day_of_month', 'season', 'holiday', 'lag_24', 'Consumption_MWh']])
+        scaled_df = scaler.fit_transform(df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']])
 
         # Extract the last sequence of data for prediction
         input_sequence = scaled_df[-SEQ_LENGTH:]
@@ -134,15 +131,9 @@ def predict4Day(codeType, df):
         predict_result = model.predict(predict)
 
         # Get the prediction and add one hour to the current timestamp
-        #predict_value = predict_result[0][0k
+        #predict_value = predict_result[0][0]
         last_row = df.iloc[-1]
-        #day_of_week, holiday, day_of_year, lag_24 = last_row['day_of_week'], last_row['holiday'], last_row['day_of_year'], last_row['lag_24']
-        day_of_week, holiday, day_of_year, lag_24 = last_row['day_of_week'], last_row['holiday'], last_row['day_of_year'], last_row['lag_24']
-        
         season, year, month, day_of_month, hour = add_one_hour(
-            #int(last_row['season']), int(last_row['year']), int(last_row['month']),
-            #int(last_row['day_of_month']), int(last_row['hour'])
-
             int(last_row['season']), int(last_row['year']), int(last_row['month']),
             int(last_row['day_of_month']), int(last_row['hour'])
         )
@@ -168,8 +159,8 @@ def predict4Day(codeType, df):
         #print(result[0][5])
         
         # Append the prediction to the DataFrame
-        df_pre = pd.DataFrame([[hour, day_of_week, month, year, day_of_year, day_of_month, season, holiday, lag_24, predicted_consumption]],
-                              columns=['hour', 'day_of_week', 'month', 'year', 'day_of_year', 'day_of_month', 'season', 'holiday', 'lag_24', 'Consumption_MWh'])
+        df_pre = pd.DataFrame([[season, year, month, day_of_month, hour, predicted_consumption]],
+                              columns=['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh'])
         
         df = pd.concat([df, df_pre], ignore_index=True)
         df = df.iloc[1:]
