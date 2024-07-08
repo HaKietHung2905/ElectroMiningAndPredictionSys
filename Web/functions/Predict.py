@@ -108,10 +108,12 @@ def predict4Day(codeType, df):
     modelName = codeType + '_LSTMmodel.h5'
     model = tf.keras.models.load_model('Weight/' + modelName)
 
+    df_a_pre_day = df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']][-SEQ_LENGTH:].values.tolist()
+
     # Mapping data
     df = season_mapping(df)
 
-    df['Consumption_MWh'] = df['Consumption_MWh'].apply(clean_consumption)
+    #df['Consumption_MWh'] = df['Consumption_MWh'].apply(clean_consumption)
     count = 0
     result_list = []
 
@@ -137,7 +139,7 @@ def predict4Day(codeType, df):
         print(season, year, month, day_of_month, hour)
         # Inverse transform the prediction to get the original scale
         result = scaler.inverse_transform([[season, year, month, day_of_month, hour, predict_value]])
-
+        print(result[0][5])
         # Convert season integer back to season string
         #season_name = {0: 'Spring', 1: 'Summer', 2: 'Autumn', 3: 'Winter'}.get(season, 'Unknown')
 
@@ -153,7 +155,18 @@ def predict4Day(codeType, df):
      
         # Convert the result to JSON
         result_list.append(json.dumps(result.tolist()))
+        # Convert the result to JSON
+        result_list.append(json.dumps([season, year, month, day_of_month, hour, result[0][5]]))
+        df_a_pre_day.append([season, year, month, day_of_month, hour, result[0][5]])
 
         count += 1
+    print('zzzz')    
+    #df_a_pre_day = np.array([[i[4], i[5]] for i in df_a_pre_day])
+    # Convert the NumPy array to a DataFrame
+    df_a_pre_day_df = pd.DataFrame(df_a_pre_day)
 
+    # Save the DataFrame to a CSV file
+    df_a_pre_day_df.to_csv('data.csv', index=False)
+    print(df_a_pre_day)
+    
     return result_list
