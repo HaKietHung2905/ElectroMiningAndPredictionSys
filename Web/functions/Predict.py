@@ -9,8 +9,27 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify
 import json
 import pandas as pd
+import holidays 
 
 SEQ_LENGTH = 24  # for 24 hours sequence
+
+# Select country 
+dk_holidays = holidays.Denmark() 
+
+def isHoliday(month, day_of_month):
+    """
+    Check if a given day and month is a holiday in Denmark.
+    
+    :param month: int, the month of the date
+    :param day_of_month: int, the day of the month
+    :return: bool, True if the date is a holiday, False otherwise
+    """
+    # Use a fixed year for checking holidays
+    year = 2024
+    date_to_check = f'{year}-{month:02d}-{day_of_month:02d}'
+    
+    # Check if the date is a holiday
+    return date_to_check in dk_holidays
 
 
 def predict1Hour(codeType, df):
@@ -30,7 +49,8 @@ def predict1Hour(codeType, df):
     hour = df['hour'].max()
     month = df['month'].max()
     day_of_month = df['day_of_month'].max()
-    seasons = df['season'].max()
+
+   
 
     #Mapping data 
     df = season_mapping(df)
@@ -44,17 +64,40 @@ def predict1Hour(codeType, df):
     # Reshape the data
     predict = np.array([scaled_df])
     predict_result = model.predict (predict)
-         
-    season, year, month, day_of_month, hour = add_one_hour(seasons, year, month, day_of_month, hour)
-    result =  scaler.inverse_transform([[season, year, month, day_of_month, hour, predict_result[0][0]]])
+
+    last_row = df.iloc[-1]
+    season, year, month, day_of_month, hour = add_one_hour(
+            int(last_row['season']), int(last_row['year']), int(last_row['month']),
+            int(last_row['day_of_month']), int(last_row['hour'])
+        )
     
-    # Convert list to JSON
-    array_list = result.tolist()
-    array_json = json.dumps(array_list)
+    print(season, year, month, day_of_month, hour)
+    # Inverse transform the prediction to get the original scale
 
-    return array_json
+    # Extract the last sequence of data for prediction
+    input_sequence = scaled_df[-SEQ_LENGTH:]
 
-def add_one_hour(season, year, month, day_of_month, hour):
+    # Initialize with input sequence
+    full_sequence = np.copy(input_sequence)
+
+    # The last column is assumed to be 'Consumption_MWh', replace it with the prediction result
+    full_sequence[:, -1] = predict_result
+
+    # Inverse transform the entire sequence
+    inverse_transformed_sequence = scaler.inverse_transform(full_sequence)
+
+    # Extract the 'Consumption_MWh' part
+    predicted_consumption = inverse_transformed_sequence[:, -1][0]
+    
+    day_of_week, holiday, day_of_year, lag_24 = last_row['day_of_week'], last_row['holiday'], last_row['day_of_year'], last_row['lag_24']
+
+    df_pre = pd.DataFrame([[hour, day_of_week, month, year, day_of_year, day_of_month, season, holiday, lag_24, predicted_consumption]],
+                              columns=['hour', 'day_of_week', 'month', 'year', 'day_of_year', 'day_of_month', 'season', 'holiday', 'lag_24', 'Consumption_MWh'])
+        
+   
+    return df_pre
+
+def add_one_hour(year, month, day_of_month, hour):
     # Construct a datetime object from the provided values
     dt = datetime(year, month, day_of_month, hour)
     
@@ -75,8 +118,14 @@ def add_one_hour(season, year, month, day_of_month, hour):
         new_season = 2
     else:
         new_season = 3
-        
-    return new_season, new_year, new_month, new_day_of_month, new_hour
+    
+    holiday = isHoliday(month, day_of_month)
+    day_of_week = datetime(year, month, day_of_month).weekday()
+    day_of_year = datetime(year, month, day_of_month).timetuple().tm_yday
+    
+    #lag_24 = 0
+
+    return new_season, new_year, new_month, new_day_of_month, new_hour, holiday, day_of_week, day_of_year
 
 def season_mapping(df):
     seasons_mapping = {
@@ -109,21 +158,17 @@ def predict4Day(codeType, df):
     modelName = codeType + '_LSTMmodel.h5'
     model = tf.keras.models.load_model('Weight/' + modelName)
 
-    #df_a_pre_day = df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']][-SEQ_LENGTH:].values.tolist()
-
     df_a_pre_day = []
     # Mapping data
     df = season_mapping(df)
 
-    #df['Consumption_MWh'] = df['Consumption_MWh'].apply(clean_consumption)
     count = 0
     result_list = []
 
     while count < 24:
         # Normalize the data
         scaler = MinMaxScaler()
-        #scaled_df = scaler.fit_transform(df[['season', 'year', 'month', 'day_of_month', 'hour', 'Consumption_MWh']])
-
+        
         scaled_df = scaler.fit_transform(df[['hour', 'day_of_week', 'month', 'year', 'day_of_year', 'day_of_month', 'season', 'holiday', 'lag_24', 'Consumption_MWh']])
 
         # Extract the last sequence of data for prediction
@@ -134,22 +179,18 @@ def predict4Day(codeType, df):
         predict_result = model.predict(predict)
 
         # Get the prediction and add one hour to the current timestamp
-        #predict_value = predict_result[0][0k
         last_row = df.iloc[-1]
-        #day_of_week, holiday, day_of_year, lag_24 = last_row['day_of_week'], last_row['holiday'], last_row['day_of_year'], last_row['lag_24']
-        day_of_week, holiday, day_of_year, lag_24 = last_row['day_of_week'], last_row['holiday'], last_row['day_of_year'], last_row['lag_24']
+        lag_24 = last_row['lag_24']
         
-        season, year, month, day_of_month, hour = add_one_hour(
-            #int(last_row['season']), int(last_row['year']), int(last_row['month']),
-            #int(last_row['day_of_month']), int(last_row['hour'])
+        #new_season, new_year, new_month, new_day_of_month, new_hour, holiday, day_of_week, day_of_year
 
-            int(last_row['season']), int(last_row['year']), int(last_row['month']),
+        season, year, month, day_of_month, hour, holiday, day_of_week, day_of_year = add_one_hour(
+            int(last_row['year']), int(last_row['month']),
             int(last_row['day_of_month']), int(last_row['hour'])
         )
         print(season, year, month, day_of_month, hour)
-        # Inverse transform the prediction to get the original scale
 
-        # Extract the last sequence of data for prediction
+        # Inverse transform the prediction to get the original scale
         input_sequence = scaled_df[-SEQ_LENGTH:]
 
         # Initialize with input sequence
@@ -164,18 +205,12 @@ def predict4Day(codeType, df):
         # Extract the 'Consumption_MWh' part
         predicted_consumption = inverse_transformed_sequence[:, -1][0]
 
-        #result = scaler.inverse_transform([[season, year, month, day_of_month, hour, predict_value]])
-        #print(result[0][5])
-        
         # Append the prediction to the DataFrame
         df_pre = pd.DataFrame([[hour, day_of_week, month, year, day_of_year, day_of_month, season, holiday, lag_24, predicted_consumption]],
                               columns=['hour', 'day_of_week', 'month', 'year', 'day_of_year', 'day_of_month', 'season', 'holiday', 'lag_24', 'Consumption_MWh'])
         
         df = pd.concat([df, df_pre], ignore_index=True)
         df = df.iloc[1:]
-
-        if count < 3:
-            print(df)
 
         # Convert the result to JSON
         result_list.append(json.dumps([season, year, month, day_of_month, hour, predicted_consumption]))

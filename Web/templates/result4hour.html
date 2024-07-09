@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Electronic Predict System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .form-container-2 {
+            max-width: 2000px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h2, h3 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style> 
+</head>
+<body>
+    <div class="form-container-2">
+        <h2>Electronic Predict System</h2>
+        <h3>Result</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hour</th>
+                    <th>Day of Week</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Day of Year</th>
+                    <th>Day of Month</th>
+                    <th>Season</th>
+                    <th>Holiday</th>
+                    <th>Lag 24</th>
+                    <th>Consumption (MWh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ result.hour }}</td>
+                    <td>{{ result.day_of_week }}</td>
+                    <td>{{ result.month }}</td>
+                    <td>{{ result.year }}</td>
+                    <td>{{ result.day_of_year }}</td>
+                    <td>{{ result.day_of_month }}</td>
+                    <td>{{ result.season }}</td>
+                    <td>{{ result.holiday }}</td>
+                    <td>{{ result.lag_24 }}</td>
+                    <td>{{ result.Consumption_MWh }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -43,13 +43,15 @@ def query_form():
         print(predictType)
         
         if predictType == 'hour':
-            Result  = Predict.predict1Hour(codeType,df)
+            df  = Predict.predict1Hour(codeType,df)
+            Result = df.iloc[0].to_dict()
+            return render_template('result4hour.html', result=Result)
         else:
             Result = Predict.predict4Day(codeType,df)            
-        
+            return render_template('result.html', result=Result) 
         # Plot the data
         print(Result)
-        return render_template('result.html', result=Result)
+       
         #return Result
     else:
         return 'Invalid file type'
