@@ -187,21 +187,18 @@ def predict4Day(codeType, df):
         # Get the prediction and add one hour to the current timestamp
         last_row = df.iloc[-1]
         #lag_24 = last_row['lag_24']
-        lag_24 = last_row['Consumption_MWh']
-      
-        if (last_row['hour'] >= 7) & (last_row['hour'] <= 16):
-            lag_24 = last_row['Consumption_MWh'] + dif_lag/2
-        elif (last_row['hour'] > 16) or (last_row['hour'] < 7):
-            lag_24 = last_row['Consumption_MWh'] - 5
         
-        print(lag_24)
-        #new_season, new_year, new_month, new_day_of_month, new_hour, holiday, day_of_week, day_of_year
+        # Lag will get Comsumption_MWh of yesterday at the same hour
 
+        lag_24 = df['Consumption_MWh'].iloc[-24]
+        #lag_24 = last_row['Consumption_MWh']
+        print("lag_24: ", lag_24)   
         season, year, month, day_of_month, hour, holiday, day_of_week, day_of_year = add_one_hour(
             int(last_row['year']), int(last_row['month']),
             int(last_row['day_of_month']), int(last_row['hour'])
         )
-        print(season, year, month, day_of_month, hour, last_row['Consumption_MWh'])
+
+        #print(season, year, month, day_of_month, hour, last_row['Consumption_MWh'])
 
         # Inverse transform the prediction to get the original scale
         input_sequence = scaled_df[-SEQ_LENGTH:]
